@@ -1,0 +1,24 @@
+{
+  "name": "The Valley of the Kings (interactive internet puzzle adventure)",
+  "manufacturer": "Lagoon",
+  "symbols": ["duck", "crow", "owl", "arm", "bowl", "leg", "beetle", "head"],
+  "grid": [4,4],
+  "cards": [
+    ["duck", "crow", "owl", "crow"],
+    ["duck", "arm", "crow", "bowl"],
+    ["owl", "duck", "crow", "owl"],
+    ["arm", "head", "crow", "duck"],
+    ["duck", "arm", "owl", "crow"],
+    ["duck", "duck", "arm", "crow"],
+    ["bowl", "leg", "owl", "crow"],
+    ["beetle", "arm", "arm", "leg"],
+    ["owl", "leg", "bowl", "owl"],
+    ["owl", "duck", "crow", "owl"],
+    ["crow", "owl", "crow", "duck"],
+    ["duck", "crow", "owl", "duck"],
+    ["crow", "bowl", "owl", "duck"],
+    ["head", "crow", "duck", "arm"],
+    ["bowl", "head", "head", "beetle"],
+    ["crow", "duck", "crow", "leg"]
+  ]
+}
