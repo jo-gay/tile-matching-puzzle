@@ -29,7 +29,16 @@ def findDistinctSymbols(card_list):
 
 def isRotation(grid_size, solution):
     """Determine whether solution is a complete rotation of an earlier solution by checking the
-    indices of the corner cards. If any is lower than the top left card, it is a rotation."""
+    indices of the corner cards. If any is lower than the top left card, it is a rotation.
+
+    This implementation is specific to the algorithm in use here, i.e. all possible solutions with the
+    card with index 0 in position 0 are tested before moving on to putting the card with index 1 in
+    position 0, etc. Therefore any possible solution in which card 0 appears in another corner,
+    must represent a rotation of a solution that has already been seen.
+
+    :param grid_size: list of two ints. [num rows, num cols]. Must be a square (TODO, extend to rectangles)
+    :param solution: a particular layout of cards.
+    """
     ref_idx = solution[0][0]
     if ref_idx > solution[grid_size[1]-1][0]:
         return True
@@ -41,7 +50,12 @@ def isRotation(grid_size, solution):
 
 
 def rotateCard(card, orientation):
-    """Return the symbols on the card rotated by orientation steps."""
+    """Return the symbols on the card, rotated by orientation steps.
+
+    :param card: list of 4 integers representing the symbols on the card, ordered clockwise from the top
+    :param orientation: integer between 0 and 3, the number of 90 degree turns to make (clockwise)
+    :returns: list of integers representing the new positions of the symbols.
+    """
     ns = len(card)
     return [card[(i + orientation) % ns] for i in range(ns)]
 
@@ -49,7 +63,14 @@ def rotateCard(card, orientation):
 def compareCards(card, card2):
     """Return 1 if card > card2, 0 if the same, and -1 if card < card2 where the ordering
     is defined by the value of the symbols from first to last, e.g. [0, 1, 2, 3] < [1, 2, 3, 0] and
-    [0, 0, 10, 7] < [0, 1, 1, 1]"""
+    [0, 0, 10, 7] < [0, 1, 1, 1].
+
+    To test whether two cards are functionally the same they should both be first put into their
+    'first' rotation, see firstRotation(card).
+
+    :param card, card2: Lists of 4 integers representing the symbols on the cards to be compared.
+    :returns: -1 if card < card2, 0 if the same symbols in the same order, +1 if card > card2.
+    """
 
     for pos in range(len(card)):
         if card[pos] > card2[pos]:
@@ -60,7 +81,13 @@ def compareCards(card, card2):
 
 
 def firstRotation(card):
-    """Return the card symbols rotated such that the first one in numerical order is in the first position."""
+    """Return the card symbols rotated such that the first one in numerical order is in the first position.
+
+    This is useful for checking whether two cards are the same.
+
+    :param card: list of ints. Ordered list of the symbols on the card (which depends on rotation)
+    :returns: the same list of ints, with the beginning moved to the lowest position as described
+    """
     ret_rot = card[:]  # best rotation found so far
     for o in range(1, len(card)):
         test_rot = rotateCard(card, o)
@@ -77,7 +104,8 @@ def excludeRotatedSolutions(grid_size, solutions):
     Since solutions are found by attempting to place cards in numerical order,
     starting from the top left corner, any solution in which the index of a card
     in one of the other corners is lower than that in the top left must have already
-    been identified with that card in the top left."""
+    been identified with that card in the top left.
+    """
     pruned_solutions = []
     for sol in solutions:
         if not isRotation(grid_size, sol):
@@ -113,7 +141,12 @@ def excludePairSolutions(cards_numerical, solutions):
 
 
 def showSolution(grid_size, solution, image_dir, image_name_pattern):
-    """Given a puzzle solution, display the images in the correct positions.
+    """Given a puzzle solution, display the images in the given positions, defined row-wise from top left of grid.
+
+    :param grid_size: List of two ints [num rows, num cols]
+    :param solution: List of tuples. Each tuple gives the index and orientation of the card in that position
+    :param image_dir: Directory in which to find images of the tiles
+    :param image_name_pattern: String to be formatted with the tile index to give the filename for the image
     """
     idx = 0
     out_image = None
@@ -140,7 +173,18 @@ def showSolution(grid_size, solution, image_dir, image_name_pattern):
     out_image.show()
 
 
-def solvePuzzle(grid_size, cards_list, symbols_list):
+def solvePuzzle(grid_size, cards_list, symbols_list=None):
+    """Given a list of tiles and the four symbols on them, and a grid size, arrange the tiles into a grid such that
+    neighbouring symbols match.
+
+    :param grid_size: List of ints [rows, columns]. What shape the solution should be.
+    :param cards_list: List of lists of strings. For each card, an ordered list of the symbols that appear on that card.
+    :param symbols_list: list of strings. What symbols are there in the puzzle? If none, this is inferred.
+    """
+    if symbols_list is None:
+        symbols_list = findDistinctSymbols(cards_list)
+
+    # Convert symbols from strings to integers for speed.
     symbols_dict = {s: i for i, s in enumerate(symbols_list)}
     cards_numerical = []
     try:
@@ -156,8 +200,6 @@ def solvePuzzle(grid_size, cards_list, symbols_list):
     solutions = placeRemainingCards(grid_size, cards_numerical, [])
     if len(solutions) > 0:
         print(f"Found {len(solutions)} solutions.")
-        # for card in solution:
-        #     print(f"Card {card[0]}: {cards_numerical[card[0]]} with orientation {card[1]}")
 
         solutions = excludePairSolutions(cards_numerical, solutions)
         solutions = excludeRotatedSolutions(grid_size, solutions)
@@ -168,9 +210,19 @@ def solvePuzzle(grid_size, cards_list, symbols_list):
             showSolution(grid_size, solution, "images", "tile_{0:02d}.jpg")
 
 
-
 def neighbourSymbols(grid_size, cards_numerical, placed):
     """Determine the symbols above and to the left of the next open position.
+
+    Given the cards that have already been placed, row-wise from left, into a grid
+    of size grid_size, identify what symbols need to be matched on the top and left
+    of the next card to be placed.
+
+    :param grid_size: list of ints [num_rows, num_cols]
+    :param cards_numerical: list of lists of ints. For each card, gives an ordered list of its symbols represented
+    numerically
+    :param placed: list of tuples. For each card already placed, gives the index and rotation of the card (row-wise
+    from top left)
+    :returns: (top, left) tuple of symbol indices.
     """
     num_placed = len(placed)
     top = None
@@ -181,34 +233,30 @@ def neighbourSymbols(grid_size, cards_numerical, placed):
         card_and_orient = placed[num_placed - grid_size[1]]
         card_above = cards_numerical[card_and_orient[0]]
         top = card_above[(card_and_orient[1] + 2) % 4]
-        # print(f"Checked card above {card_above} and found it has bottom symbol = {top}")
 
     if num_placed % grid_size[1] > 0:
         # There is a card to the left. Find its right symbol.
         card_and_orient = placed[num_placed - 1]
         card_left = cards_numerical[card_and_orient[0]]
         left = card_left[(card_and_orient[1] + 1) % 4]
-        # print(f"Checked card on the left {card_left} and found it has right symbol = {left}")
 
     return top, left
 
 
 def placeRemainingCards(grid_size, cards_numerical, placed):
     """Recursive function to complete the grid from the given position.
+
     :param grid_size: list of two integers [rows, columns]
     :param cards_numerical: list of all cards that are in the game
     :param placed: list of tuples. Card index and rotation for each already-placed card
-    :return: list of tuples. All placed cards with their orientations
+    :returns: list of tuples. All placed card indices with their orientations
     """
     if len(placed) == grid_size[0] * grid_size[1]:
-        # print(f"Found a solution: {placed}")
         return [placed]
 
     solutions = []
-    # print(f"Attempting to place remaining cards with {len(placed)} cards already in place: {placed}.")
     # Determine which symbols need to be matched based on the grid size and number of cards placed
     top, left = neighbourSymbols(grid_size, cards_numerical, placed)
-    # print(f"top symbol is {top}, left is {left}.")
 
     # Loop through all the cards and orientations that can go in the next position
     used_cards = [idx for (idx, orientation) in placed]
@@ -246,6 +294,7 @@ if __name__ == '__main__':
             print(f"Game specification file not found at {setup_file}")
             exit(-1)
 
+    # Fill in any gaps
     game_name = game_spec.get('name') or 'Unnamed'
     game_maker = game_spec.get('manufacturer') or 'Unknown'
     print(f"Attempting to solve {game_name} by {game_maker}")
@@ -259,4 +308,5 @@ if __name__ == '__main__':
     symbols = game_spec.get('symbols') or findDistinctSymbols(cards)
     print(f"Game has {len(symbols)} symbols on {len(cards)} cards")
 
-    solvePuzzle([4, 4], cards, symbols)
+    # Search for solutions
+    solvePuzzle(grid_size, cards, symbols)
